@@ -38,7 +38,7 @@ def fetch_layers(config, store=None):
     Earth Engine is initialized lazily: a fully cached AOI/date needs neither EE auth nor a
     network call, so repeated runs at new ignition points stay offline and fast.
     """
-    scale = gee.compute_scale(config.aoi_bounds, config.max_pixels, config.min_scale_m)
+    scale = gee.compute_scale(config.aoi_bounds, config.max_pixels, config.min_scale_m, config.gsd_m)
     region_state = {"region": None, "ready": False}  # EE initialized + region built on first fetch
 
     def ensure_region():
@@ -73,7 +73,7 @@ def fetch_static(config, region, scale):
 
 def assemble_inputs(config, static, weather_stack):
     """Align, mask, and wrap fetched layers into pyretechnics SpaceTimeCubes + metadata."""
-    scale = gee.compute_scale(config.aoi_bounds, config.max_pixels, config.min_scale_m)
+    scale = gee.compute_scale(config.aoi_bounds, config.max_pixels, config.min_scale_m, config.gsd_m)
     slope, aspect = static["slope"], static["aspect"]
     fuel_model = physics.nlcd_to_fuel_model(static["landcover"])
     water = static["water"]

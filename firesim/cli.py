@@ -19,6 +19,7 @@ pre-populate that cache; a later `run` with the same AOI/date only needs a new i
 """
 
 import argparse
+import math
 import pathlib
 import sys
 
@@ -27,6 +28,20 @@ from .cache import DataStore
 from .config import SimulationConfig
 from .gee import initialize_ee
 from .model import run_simulation
+
+
+def _positive_float(value: str) -> float:
+    number = float(value)
+    if not math.isfinite(number) or number <= 0:
+        raise argparse.ArgumentTypeError("must be a finite number greater than zero")
+    return number
+
+
+def _positive_int(value: str) -> int:
+    number = int(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError("must be an integer greater than zero")
+    return number
 
 
 def _add_data_args(sub) -> None:
@@ -60,6 +75,22 @@ def _add_data_args(sub) -> None:
     sub.add_argument(
         "--cache-dir",
         help="Directory for cached fetched layers (reused across runs on the same AOI/date).",
+    )
+    grid = sub.add_mutually_exclusive_group()
+    grid.add_argument(
+        "--gsd",
+        dest="gsd_m",
+        type=_positive_float,
+        metavar="METERS",
+        help="Explicit grid scale in meters (e.g. 30); overrides automatic grid sizing.",
+    )
+    grid.add_argument(
+        "--max-pixels",
+        type=_positive_int,
+        default=SimulationConfig.max_pixels,
+        metavar="N",
+        help="Size the longest AOI side to approximately N cells, with a 30 m minimum cell size "
+        "(default: %(default)s when --gsd is omitted).",
     )
 
 
@@ -154,6 +185,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
         projection_days=args.projection_days,
         weather_source=args.weather_source,
         cache_dir=args.cache_dir,
+        gsd_m=args.gsd_m,
+        max_pixels=args.max_pixels,
     )
 
     store = DataStore(config.cache_dir) if config.cache_dir else None
@@ -199,6 +232,8 @@ def _cmd_fetch(args: argparse.Namespace) -> int:
         projection_days=args.projection_days,
         weather_source=args.weather_source,
         cache_dir=args.cache_dir,
+        gsd_m=args.gsd_m,
+        max_pixels=args.max_pixels,
     )
 
     print(f"Initializing Earth Engine (project: {config.ee_project or 'unset'})...")
@@ -206,7 +241,7 @@ def _cmd_fetch(args: argparse.Namespace) -> int:
 
     store = DataStore(config.cache_dir)
     region = gee.aoi_geometry(config.aoi_bounds)
-    scale = gee.compute_scale(config.aoi_bounds, config.max_pixels, config.min_scale_m)
+    scale = gee.compute_scale(config.aoi_bounds, config.max_pixels, config.min_scale_m, config.gsd_m)
 
     print("Fetching static layers (DEM, fuel, water)...")
     static = model.fetch_static(config, region, scale)

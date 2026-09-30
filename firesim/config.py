@@ -35,6 +35,7 @@ class SimulationConfig:
     start_hour: int = 12        # hour of day (UTC) the fire starts
     max_pixels: int = 160       # longest AOI side in pixels (controls resolution/cost)
     min_scale_m: float = 30.0   # floor on cell size in meters
+    gsd_m: float | None = field(default=None, kw_only=True)  # explicit scale; overrides grid limits
 
     # --- Data cache (reuse fetched layers across runs; None disables) ---
     cache_dir: str | None = None

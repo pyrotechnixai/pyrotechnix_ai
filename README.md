@@ -70,11 +70,40 @@ run it via `uv run pyroSim run ...` or `.venv/bin/pyroSim run ...`. The equivale
 | `--ignition-date YYYY-MM-DD` | yes | Date the fire departs. |
 | `--projection-days N` | yes | Projection horizon in days. |
 | `--weather-source {gridmet,weathernext}` | no | Weather backend (default: `gridmet`). |
+| `--gsd METERS` | no | Explicit grid scale in meters, e.g. `--gsd 30`. Mutually exclusive with `--max-pixels`. |
+| `--max-pixels N` | no | Approximate cell count along the longest AOI side; derives the scale with a 30 m minimum. Default: `160` when `--gsd` is omitted. |
 | `--output-name NAME`, `-o NAME` | yes | Output GeoTIFF filename (a `.tif` extension is added if missing). |
 | `--intensity` | no | Also save a fireline-intensity GeoTIFF as `<name>_intensity.tif`. |
 | `--severity` | no | Also save a flame-length severity-class GeoTIFF as `<name>_severity.tif`. |
 
 Run `pyroSim run --help` for the full reference.
+
+### Choosing the grid resolution
+
+Both `run` and `fetch` accept `--gsd` or `--max-pixels`. Use `--gsd 30` to request a
+30-meter grid scale regardless of the AOI size:
+
+```bash
+pyroSim run \
+  --aoi-bounds -120.55 39.00 -120.30 39.20 \
+  --ignition-lonlat -120.45 39.10 \
+  --ignition-date 2026-09-10 --projection-days 5 \
+  --weather-source weathernext --gsd 30 \
+  --cache-dir ./tahoe_cache -o tahoe_30m.tif
+```
+
+Alternatively, `--max-pixels 800` derives the scale from the AOI dimensions, keeping it
+at least 30 m. With neither option, the existing 160-cell default applies (about 138 m
+for this sample area). Explicit GSD bypasses both this automatic sizing and its 30 m floor;
+requesting finer sampling does not add detail to the source data.
+
+Use the same grid option for `fetch` and subsequent `run` commands. Changing it uses a
+separate cache entry and requires fetching inputs again, including Earth Engine setup
+and authentication on a cache miss. The bundled Tahoe cache remains usable with the defaults.
+
+GSD is passed as the Earth Engine scale in meters and the simulation's cell size.
+Downloads and exports still use EPSG:4326 (angular coordinates); this option does not
+introduce a projected grid with constant square ground dimensions.
 
 ## Outputs
 

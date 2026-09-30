@@ -7,7 +7,7 @@ Only US-covered public datasets are used (see docs/pyretechnics_weathernext3_inp
 """
 
 from datetime import datetime, timedelta, timezone
-from math import cos, radians
+from math import cos, isfinite, radians
 
 import ee
 import numpy as np
@@ -28,8 +28,14 @@ def initialize_ee(project: str) -> None:
         ee.Initialize(project=project)
 
 
-def compute_scale(bounds, max_pixels: int, min_scale_m: float) -> float:
-    """Pick a cell size (m) so the longest AOI side is ~max_pixels wide."""
+def compute_scale(bounds, max_pixels: int, min_scale_m: float, gsd_m: float | None = None) -> float:
+    """Use explicit GSD, or size the grid to ~max_pixels along its longest side."""
+    if gsd_m is not None:
+        if not isfinite(gsd_m) or gsd_m <= 0:
+            raise ValueError("gsd must be a finite number greater than zero.")
+        return float(gsd_m)
+    if not isfinite(max_pixels) or max_pixels <= 0:
+        raise ValueError("max-pixels must be greater than zero.")
     west, south, east, north = bounds
     lat = (south + north) / 2.0
     width_m = (east - west) * 111320.0 * cos(radians(lat))
