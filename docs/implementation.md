@@ -173,6 +173,7 @@ align → mask → SpaceTimeCubes) → `spread_fire_with_phi_field` → `get_ful
 | `start_hour` | `12` | hour (UTC) the fire starts |
 | `max_pixels` | `160` | longest AOI side in pixels (resolution/cost) |
 | `min_scale_m` | `30.0` | floor on cell size (m) |
+| `gsd_m` | `None` | explicit scale (m), overriding `max_pixels` and `min_scale_m`; CLI: `--gsd` |
 | `live_herbaceous` / `live_woody` / `foliar` | `0.9` / `0.6` / `1.0` | live fuel moisture constants |
 | `canopy_cover` / `canopy_height` / `canopy_base_height` / `canopy_bulk_density` | `0.0` | canopy constants (0 = surface fire only) |
 
@@ -184,7 +185,7 @@ align → mask → SpaceTimeCubes) → `spread_fire_with_phi_field` → `get_ful
 - **Live fuel moisture** and **foliar moisture** are seasonal constants (the remaining 🔴 gap).
 - **Dead fuel moisture** is modeled from current weather (no multi-week spin-up of the 100 hr class
   in the WeatherNext path).
-- **Resolution** is coarse (grid capped by `max_pixels`); weather is far coarser than fuels/topo.
+- **Resolution** defaults to automatic sizing using `max_pixels`; `--gsd` sets an explicit scale. Weather is far coarser than fuels/topo. The EPSG:4326 grid does not guarantee square ground dimensions.
 - **US only** — relies on NLCD/GRIDMET/WeatherNext CONUS coverage.
 
 ---

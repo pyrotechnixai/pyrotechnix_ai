@@ -30,12 +30,18 @@ def _round_bounds(bounds) -> list[float]:
 
 def static_params(config) -> dict:
     """Parameters that fully determine the static (date-independent) layers."""
-    return {
+    params = {
         "aoi_bounds": _round_bounds(config.aoi_bounds),
         "max_pixels": config.max_pixels,
         "min_scale_m": config.min_scale_m,
         "water_fraction_threshold": config.water_fraction_threshold,
     }
+    if config.gsd_m is not None:
+        # Explicit GSD overrides these limits. Preserve legacy keys otherwise.
+        del params["max_pixels"]
+        del params["min_scale_m"]
+        params["gsd_m"] = float(config.gsd_m)
+    return params
 
 
 def weather_params(config) -> dict:
